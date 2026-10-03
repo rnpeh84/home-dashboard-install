@@ -14,13 +14,18 @@ Harbor 프로젝트가 private이면 서버에서 **pull 권한 전용 계정**�
 
 ```bash
 docker login hub.v.cller.com
-curl -fsSL https://raw.githubusercontent.com/rnpeh84/home-dashboard-install/v0.1.1/install.sh -o /tmp/home-dashboard-install.sh
-sudo bash /tmp/home-dashboard-install.sh --version 0.1.1
+curl -fsSL https://raw.githubusercontent.com/rnpeh84/home-dashboard-install/installer-v0.1.2/install.sh -o /tmp/home-dashboard-install.sh && sudo bash /tmp/home-dashboard-install.sh --version 0.1.1
 ```
 
 Docker 로그인을 일반 사용자로 했다면 sudo Docker와 인증 저장소가 다르다. 같은 사용자로
 로그인/설치를 실행한다. 예를 들어 `sudo docker login hub.v.cller.com` 후 sudo 설치한다.
-기본 설치 경로는 `/opt/home-dashboard`, 포트는 `7575`, bind는 `0.0.0.0`이다.
+기본 설치 경로는 명령을 실행한 현재 폴더, 포트는 `7575`, bind는 `0.0.0.0`이다.
+실행하면 현재 폴더를 기본값으로 설치 경로를 묻는다. Enter는 현재 폴더, 다른 절대 경로를 입력하면
+그 경로에 compose.yaml/.env/appdata를 만든다. `--dir` 또는 HOME_DASHBOARD_DIR을 지정하면
+질문을 생략한다. 터미널 없는 자동 실행은 --dir이 필요하다. curl 파이프 실행도 경로 질문을
+stdin 대신 /dev/tty에서 읽어 스크립트 내용과 사용자 입력이 섞이지 않는다.
+설치 스크립트 버전은 `scripts/home-dashboard/INSTALLER_VERSION`(0.1.2), 앱 버전은
+루트 VERSION(0.1.1)로 구분하며 이번 변경에는 이미지 재빌드가 필요하지 않다.
 기존 reverse proxy 뒤에서만 노출하려면 `--bind 127.0.0.1`과 `--url https://실제주소`를 지정한다.
 스크립트는 방화벽, DNS, TLS, reverse proxy를 변경하지 않는다.
 
@@ -29,6 +34,7 @@ Docker 로그인을 일반 사용자로 했다면 sudo Docker와 인증 저장�
 초기 설치 후 웹에서 관리자 온보딩을 완료한다. 샘플 계정/로컬 검증 DB는 이미지에 포함되지 않는다.
 
 같은 경로로 스크립트를 다시 실행하고 `--version x.x.x`를 지정하면 업데이트한다.
+기존 port/bind/URL 설정은 `.env`에 기록되어 옵션을 생략해도 유지된다.
 이미지를 먼저 pull하고, 기존 컨테이너를 정지한 뒤 `backups/<UTC시간-PID>/`에
 appdata 전체와 기존 compose/.env/VERSION을 백업한다. 실패한 백업은 기존 구성을 다시 시작한다.
 마이그레이션 후 이전 이미지로 태그만 바꾸는 rollback은 지원하지 않는다.

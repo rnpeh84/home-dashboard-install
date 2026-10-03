@@ -5,7 +5,9 @@ umask 077
 registry=hub.v.cller.com
 repository="$registry/home_dashboard/home-dashboard"
 version="${HOME_DASHBOARD_VERSION:-}"
-directory="${HOME_DASHBOARD_DIR:-/opt/home-dashboard}"
+directory="${HOME_DASHBOARD_DIR:-$PWD}"
+directory_explicit=false
+[[ -z "${HOME_DASHBOARD_DIR:-}" ]] || directory_explicit=true
 bind_address="${HOME_DASHBOARD_BIND:-}"
 port="${HOME_DASHBOARD_PORT:-}"
 public_url="${HOME_DASHBOARD_URL:-}"
@@ -14,14 +16,29 @@ while (($#)); do
     --version|--dir|--port|--bind|--url)
       (($# >= 2)) || { echo "Missing value for $1" >&2; exit 1; }
       case "$1" in
-        --version) version="$2";; --dir) directory="$2";; --port) port="$2";;
+        --version) version="$2";; --dir) directory="$2"; directory_explicit=true;; --port) port="$2";;
         --bind) bind_address="$2";; --url) public_url="$2";;
       esac
       shift 2;;
-    --help) echo "Usage: install.sh [--version x.x.x] [--dir /opt/home-dashboard] [--bind 0.0.0.0] [--port 7575] [--url https://dashboard.example.com]"; exit 0;;
+    --help) echo "Usage: install.sh [--version x.x.x] [--dir /absolute/path (default: current directory)] [--bind 0.0.0.0] [--port 7575] [--url https://dashboard.example.com]"; exit 0;;
     *) echo "Unknown option: $1" >&2; exit 1;;
   esac
 done
+if [[ "$directory_explicit" = false ]]; then
+  # Read from the terminal, not stdin: stdin may contain a curl | bash script.
+  if ! { exec 3<> /dev/tty; } 2>/dev/null; then
+    echo 'No interactive terminal. Specify --dir /absolute/path.' >&2
+    exit 1
+  fi
+  printf '설치 경로 [%s]: ' "$directory" >&3
+  if ! IFS= read -r selected_directory <&3; then
+    echo 'Installation directory input was cancelled.' >&2
+    exit 1
+  fi
+  exec 3>&-
+  [[ -z "$selected_directory" ]] || directory="$selected_directory"
+fi
+printf 'Installation directory: %s\nCompose file: %s/compose.yaml\n' "$directory" "$directory"
 if [[ -f "$directory/.env" ]]; then
   while IFS= read -r setting; do
     case "$setting" in
