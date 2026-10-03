@@ -6,8 +6,8 @@ registry=hub.v.cller.com
 repository="$registry/home_dashboard/home-dashboard"
 version="${HOME_DASHBOARD_VERSION:-}"
 directory="${HOME_DASHBOARD_DIR:-/opt/home-dashboard}"
-bind_address="${HOME_DASHBOARD_BIND:-0.0.0.0}"
-port="${HOME_DASHBOARD_PORT:-7575}"
+bind_address="${HOME_DASHBOARD_BIND:-}"
+port="${HOME_DASHBOARD_PORT:-}"
 public_url="${HOME_DASHBOARD_URL:-}"
 while (($#)); do
   case "$1" in
@@ -22,6 +22,17 @@ while (($#)); do
     *) echo "Unknown option: $1" >&2; exit 1;;
   esac
 done
+if [[ -f "$directory/.env" ]]; then
+  while IFS= read -r setting; do
+    case "$setting" in
+      HOME_DASHBOARD_PORT=*) [[ -n "$port" ]] || port="${setting#*=}";;
+      HOME_DASHBOARD_BIND=*) [[ -n "$bind_address" ]] || bind_address="${setting#*=}";;
+      HOME_DASHBOARD_URL=*) [[ -n "$public_url" ]] || public_url="${setting#*=}";;
+    esac
+  done < "$directory/.env"
+fi
+port="${port:-7575}"
+bind_address="${bind_address:-0.0.0.0}"
 for command in docker curl openssl; do
   command -v "$command" >/dev/null || { echo "$command is required; install it first." >&2; exit 1; }
 done
@@ -51,21 +62,6 @@ else
   printf 'SECRET_ENCRYPTION_KEY=%s\n' "$(openssl rand -hex 32)" > .env
 fi
 compose=(docker compose --project-name home-dashboard --env-file .env -f compose.yaml)
-if [[ -e compose.yaml ]]; then
-  stamp=$(date -u +%Y%m%dT%H%M%SZ)-$$
-  backup="$PWD/backups/$stamp"
-  mkdir "$backup"
-  cp .env compose.yaml "$backup/"
-  [[ ! -e VERSION ]] || cp VERSION "$backup/"
-  "${compose[@]}" stop
-  # A stopped application gives SQLite and Redis a consistent disk backup.
-  if ! docker run --rm --entrypoint tar -v "$PWD/appdata:/data:ro" -v "$backup:/backup" "$image" -czf /backup/appdata.tar.gz -C /data .; then
-    "${compose[@]}" up -d
-    echo 'Backup failed; original configuration restarted.' >&2
-    exit 1
-  fi
-  echo "Pre-update backup: $backup"
-fi
 temporary=$(mktemp "$PWD/.compose.XXXXXX")
 trap 'rm -f "$temporary"' EXIT
 cat > "$temporary" <<EOF
@@ -93,6 +89,24 @@ if [[ -n "$public_url" ]]; then
   printf '      AUTH_URL: "%s"\n' "$public_url" >> "$temporary"
 fi
 docker compose --project-name home-dashboard --env-file .env -f "$temporary" config --quiet
+if [[ -e compose.yaml ]]; then
+  stamp=$(date -u +%Y%m%dT%H%M%SZ)-$$
+  backup="$PWD/backups/$stamp"
+  mkdir "$backup"
+  cp .env compose.yaml "$backup/"
+  [[ ! -e VERSION ]] || cp VERSION "$backup/"
+  "${compose[@]}" stop
+  # A stopped application gives SQLite and Redis a consistent disk backup.
+  if ! docker run --rm --entrypoint tar -v "$PWD/appdata:/data:ro" -v "$backup:/backup" "$image" -czf /backup/appdata.tar.gz -C /data .; then
+    "${compose[@]}" up -d
+    echo 'Backup failed; original configuration restarted.' >&2
+    exit 1
+  fi
+  echo "Pre-update backup: $backup"
+fi
+grep -vE '^HOME_DASHBOARD_(PORT|BIND|URL)=' .env > .env.next
+printf 'HOME_DASHBOARD_PORT=%s\nHOME_DASHBOARD_BIND=%s\nHOME_DASHBOARD_URL=%s\n' "$port" "$bind_address" "$public_url" >> .env.next
+mv .env.next .env
 mv "$temporary" compose.yaml
 "${compose[@]}" up -d --wait --wait-timeout 180
 printf '%s\n' "$version" > VERSION
