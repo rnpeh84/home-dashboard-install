@@ -6,6 +6,8 @@ install.sh, VERSION, 설치 안내와 Apache-2.0 고지만 게시한다.
 fork 버전의 기준은 저장소 루트 `VERSION`이다. Homarr 원본 package 버전은 유지한다.
 `x.x.x` 이미지 태그는 재사용하지 않으며 새 코드 배포는 VERSION을 올리고 새 태그를 만든다.
 이미지는 `hub.v.cller.com/home_dashboard/home-dashboard:<VERSION>`에 게시한다.
+`latest`는 최신 검증된 버전과 같은 이미지를 가리키며, x.x.x 태그는 고정한다.
+설치 스크립트는 공개 VERSION의 고정 버전을 기본으로 사용한다.
 첫 릴리스는 `0.1.1`, Linux amd64이다.
 
 Linux 서버에 Docker Engine, Docker Compose v2, curl, openssl이 필요하다.
