@@ -16,7 +16,7 @@ Harbor 프로젝트가 private이면 서버에서 **pull 권한 전용 계정**�
 
 ```bash
 docker login hub.v.cller.com
-curl -fsSL https://raw.githubusercontent.com/rnpeh84/home-dashboard-install/v0.1.3/install.sh -o /tmp/home-dashboard-install.sh && sudo bash /tmp/home-dashboard-install.sh --version 0.1.3
+curl -fsSL https://raw.githubusercontent.com/rnpeh84/home-dashboard-install/v0.1.4/install.sh -o /tmp/home-dashboard-install.sh && sudo bash /tmp/home-dashboard-install.sh --version 0.1.4
 ```
 
 Docker 로그인을 일반 사용자로 했다면 sudo Docker와 인증 저장소가 다르다. 같은 사용자로
@@ -27,7 +27,7 @@ Docker 로그인을 일반 사용자로 했다면 sudo Docker와 인증 저장�
 질문을 생략한다. 터미널 없는 자동 실행은 --dir이 필요하다. curl 파이프 실행도 경로 질문을
 stdin 대신 /dev/tty에서 읽어 스크립트 내용과 사용자 입력이 섞이지 않는다.
 설치 스크립트 버전은 `scripts/home-dashboard/INSTALLER_VERSION`(0.1.2), 앱 버전은
-루트 VERSION(0.1.3)로 구분한다. 앱 변경은 새 버전 이미지로 빌드해 게시한다.
+루트 VERSION(0.1.4)로 구분한다. 앱 변경은 새 버전 이미지로 빌드해 게시한다.
 기존 reverse proxy 뒤에서만 노출하려면 `--bind 127.0.0.1`과 `--url https://실제주소`를 지정한다.
 스크립트는 방화벽, DNS, TLS, reverse proxy를 변경하지 않는다.
 
